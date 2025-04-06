@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitap+ | Gelişmiş Ödev Takip</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #5e35b1;
+            --secondary: #3949ab;
+            --accent: #7c4dff;
+            --danger: #e53935;
+            --warning: #ffb300;
+            --success: #43a047;
+            --light: #f5f5f5;
+            --dark: #263238;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 2rem 1.5rem;
+            box-shadow: var(--shadow);
+            position: relative;
+            z-index: 10;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 2.5rem;
+            font-size: 1.6rem;
+            font-weight: 600;
+        }
+
+        .logo i {
+            font-size: 2rem;
+            color: var(--accent);
+        }
+
+        .nav-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .nav-item {
+            padding: 1rem 1.2rem;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.05rem;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2.5rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 0.8rem 1.6rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-warning {
+            background-color: var(--warning);
+            color: white;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+
+        /* Cards */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.8rem;
+            margin-top: 1.8rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.8rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .badge {
+            padding: 0.4rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .badge-primary {
+            background-color: rgba(94, 53, 177, 0.1);
+            color: var(--primary);
+        }
+
+        .badge-warning {
+            background-color: rgba(255, 179, 0, 0.1);
+            color: var(--warning);
+        }
+
+        /* Tables */
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        .table th, .table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .table th {
+            background-color: var(--primary);
+            color: white;
+            font-weight: 500;
+        }
+
+        .table tr:hover td {
+            background-color: rgba(94, 53, 177, 0.05);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(3px);
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 2.5rem;
+            animation: modalFadeIn 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            color: #757575;
+            transition: transform 0.3s ease;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg);
+            color: var(--danger);
+        }
+
+        .form-group {
+            margin-bottom: 1.8rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 1.05rem;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 1rem 1.2rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: #fafafa;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(94, 53, 177, 0.2);
+            background-color: white;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        /* Student View */
+        .student-view {
+            display: none;
+        }
+
+        .week-plan {
+            margin-top: 2.5rem;
+        }
+
+        .day-card {
+            background-color: white;
+            border-radius: 12px;
+            padding: 1.8rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: transform 0.3s ease;
+        }
+
+        .day-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .day-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.2rem;
+        }
+
+        /* Book List */
+        .book-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.8rem;
+            background-color: #f9f9f9;
+        }
+
+        .book-title {
+            font-weight: 500;
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <i class="fas fa-book-reader"></i>
+                <span>Kitap+</span>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item active" onclick="showTab('students')">
+                    <i class="fas fa-users"></i>
+                    <span>Öğrenciler</span>
+                </div>
+                <div class="nav-item" onclick="showTab('books')">
+                    <i class="fas fa-book"></i>
+                    <span>Kitaplar</span>
+                </div>
+                <div class="nav-item" onclick="showTab('assignments')">
+                    <i class="fas fa-tasks"></i>
+                    <span>Tüm Ödevler</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Teacher View -->
+            <div id="teacherView">
+                <div class="tabs">
+                    <div class="tab active" data-tab="students">Öğrenciler</div>
+                    <div class="tab" data-tab="books">Kitaplar</div>
+                    <div class="tab" data-tab="assignments">Ödevler</div>
+                </div>
+
+                <!-- Students Tab -->
+                <div id="students" class="tab-content active">
+                    <div class="header">
+                        <h1 class="page-title">
+                            <i class="fas fa-users"></i>
+                            Öğrenci Listesi
+                        </h1>
+                        <button class="btn btn-primary" onclick="openStudentModal()">
+                            <i class="fas fa-plus"></i>
+                            Yeni Öğrenci
+                        </button>
+                    </div>
+
+                    <div class="card-grid" id="studentsContainer">
+                        <!-- Öğrenci kartları buraya eklenecek -->
+                    </div>
+                </div>
+
+                <!-- Books Tab -->
+                <div id="books" class="tab-content">
+                    <div class="header">
+                        <h1 class="page-title">
+                            <i class="fas fa-book"></i>
+                            Kitap Listesi
+                        </h1>
+                        <button class="btn btn-primary" onclick="openBookModal()">
+                            <i class="fas fa-plus"></i>
+                            Yeni Kitap
+                        </button>
+                    </div>
+
+                    <div id="booksContainer">
+                        <!-- Kitap listesi buraya eklenecek -->
+                    </div>
+                </div>
+
+                <!-- Assignments Tab -->
+                <div id="assignments" class="tab-content">
+                    <div class="header">
+                        <h1 class="page-title">
+                            <i class="fas fa-tasks"></i>
+                            Tüm Ödevler
+                        </h1>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Öğrenci</th>
+                                <th>Kitap</th>
+                                <th>Tarih</th>
+                                <th>İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody id="allAssignments">
+                            <!-- Tüm ödevler buraya eklenecek -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Student View -->
+            <div id="studentView" class="student-view">
+                <div class="header">
+                    <h1 class="page-title" id="studentViewTitle">
+                        <i class="fas fa-calendar-alt"></i>
+                        Ödev Planı
+                    </h1>
+                    <button class="btn btn-primary" onclick="window.location.href = window.location.pathname">
+                        <i class="fas fa-arrow-left"></i>
+                        Geri Dön
+                    </button>
+                </div>
+
+                <div class="week-plan" id="weekPlan">
+                    <!-- Haftalık plan buraya eklenecek -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="studentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-user-plus"></i>
+                    Yeni Öğrenci
+                </h2>
+                <button class="close-btn" onclick="closeModal('studentModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Öğrenci Adı</label>
+                <input type="text" class="form-input" id="studentNameInput" placeholder="Öğrencinin adını yazın">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telefon (Opsiyonel)</label>
+                <input type="tel" class="form-input" id="studentPhoneInput" placeholder="05xx xxx xx xx">
+            </div>
+            <button class="btn btn-primary" onclick="addStudent()">
+                <i class="fas fa-save"></i>
+                Kaydet
+            </button>
+        </div>
+    </div>
+
+    <div class="modal" id="bookModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-book-medical"></i>
+                    Yeni Kitap Ekle
+                </h2>
+                <button class="close-btn" onclick="closeModal('bookModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kitap Adı</label>
+                <input type="text" class="form-input" id="bookNameInput" placeholder="Kitabın adını yazın">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Yazar</label>
+                <input type="text" class="form-input" id="bookAuthorInput" placeholder="Yazar adı">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Sayfa Sayısı</label>
+                    <input type="number" class="form-input" id="bookPagesInput" placeholder="Toplam sayfa">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Seviye</label>
+                    <select class="form-select" id="bookLevelInput">
+                        <option value="Başlangıç">Başlangıç</option>
+                        <option value="Orta">Orta</option>
+                        <option value="İleri">İleri</option>
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary" onclick="addBook()">
+                <i class="fas fa-save"></i>
+                Kaydet
+            </button>
+        </div>
+    </div>
+
+    <div class="modal" id="assignmentModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-tasks"></i>
+                    Ödev Planı Oluştur
+                </h2>
+                <button class="close-btn" onclick="closeModal('assignmentModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Öğrenci Seçin</label>
+                <select class="form-select" id="assignmentStudentSelect">
+                    <!-- Öğrenciler buraya eklenecek -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kitap Seçin</label>
+                <select class="form-select" id="assignmentBookSelect">
+                    <!-- Kitaplar buraya eklenecek -->
+                </select>
+            </div>
+            <div id="daysContainer">
+                <!-- Günler buraya eklenecek -->
+            </div>
+            <button class="btn btn-primary" onclick="saveAssignment()">
+                <i class="fas fa-link"></i>
+                Oluştur ve Link Al
+            </button>
+        </div>
+    </div>
+
+    <div class="modal" id="confirmModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2 class="modal-title" id="confirmModalTitle">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Silme Onayı
+                </h2>
+                <button class="close-btn" onclick="closeModal('confirmModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <p id="confirmModalMessage">Bu öğeyi silmek istediğinize emin misiniz?</p>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button class="btn btn-warning" onclick="closeModal('confirmModal')">
+                    <i class="fas fa-times"></i> Vazgeç
+                </button>
+                <button class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash"></i> Sil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Veri depolama
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let books = JSON.parse(localStorage.getItem('books')) || [];
+        let assignments = JSON.parse(localStorage.getItem('assignments')) || [];
+        let currentStudentId = null;
+        let currentBookId = null;
+        let currentAssignmentId = null;
+        let deleteType = null; // 'student', 'book', 'assignment'
+
+        // URL'de öğrenci ID varsa öğrenci görünümünü göster
+        const urlParams = new URLSearchParams(window.location.search);
+        if(urlParams.has('studentId')) {
+            showStudentView(urlParams.get('studentId'));
+        } else {
+            renderAllData();
+        }
+
+        // Modal fonksiyonları
+        function openModal(id) {
+            document.getElementById(id).style.display = 'flex';
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function openStudentModal() {
+            document.getElementById('studentNameInput').value = '';
+            document.getElementById('studentPhoneInput').value = '';
+            openModal('studentModal');
+        }
+
+        function openBookModal() {
+            document.getElementById('bookNameInput').value = '';
+            document.getElementById('bookAuthorInput').value = '';
+            document.getElementById('bookPagesInput').value = '';
+            document.getElementById('bookLevelInput').value = 'Başlangıç';
+            openModal('bookModal');
+        }
+
+        function openAssignmentModal(studentId = null) {
+            // Öğrenci seçimini doldur
+            const studentSelect = document.getElementById('assignmentStudentSelect');
+            studentSelect.innerHTML = students.map(s => 
+                `<option value="${s.id}" ${studentId == s.id ? 'selected' : ''}>${s.name}</option>`
+            ).join('');
+            
+            // Kitap seçimini doldur
+            const bookSelect = document.getElementById('assignmentBookSelect');
+            bookSelect.innerHTML = books.map(b => 
+                `<option value="${b.id}">${b.name} - ${b.author}</option>`
+            ).join('');
+            
+            // Günleri oluştur
+            const days = [
+                { name: 'Pazartesi', icon: '1' },
+                { name: 'Salı', icon: '2' },
+                { name: 'Çarşamba', icon: '3' },
+                { name: 'Perşembe', icon: '4' },
+                { name: 'Cuma', icon: '5' }
+            ];
+            
+            let html = '<h3 style="margin:1.5rem 0 1rem;">Haftalık Plan</h3>';
+            days.forEach(day => {
+                html += `
+                    <div class="form-group day-plan">
+                        <label class="form-label">
+                            <i class="fas fa-calendar-day"></i> ${day.name}
+                        </label>
+                        <input 
+                            type="text" 
+                            class="form-input" 
+                            data-day="${day.name}" 
+                            placeholder="Örn: 12-15"
+                        >
+                    </div>
+                `;
+            });
+            
+            document.getElementById('daysContainer').innerHTML = html;
+            openModal('assignmentModal');
+        }
+
+        // Öğrenci ekleme
+        function addStudent() {
+            const name = document.getElementById('studentNameInput').value.trim();
+            if(!name) {
+                alert('Öğrenci adı boş olamaz!');
+                return;
+            }
+
+            const student = {
+                id: Date.now(),
+                name: name,
+                phone: document.getElementById('studentPhoneInput').value.trim(),
+                date: new Date().toLocaleDateString('tr-TR')
+            };
+            
+            students.push(student);
+            saveData();
+            renderAllData();
+            closeModal('studentModal');
+        }
+
+        // Kitap ekleme
+        function addBook() {
+            const name = document.getElementById('bookNameInput').value.trim();
+            const author = document.getElementById('bookAuthorInput').value.trim();
+            
+            if(!name || !author) {
+                alert('Kitap adı ve yazar boş olamaz!');
+                return;
+            }
+
+            const book = {
+                id: Date.now(),
+                name: name,
+                author: author,
+                pages: document.getElementById('bookPagesInput').value || 0,
+                level: document.getElementById('bookLevelInput').value,
+                date: new Date().toLocaleDateString('tr-TR')
+            };
+            
+            books.push(book);
+            saveData();
+            renderAllData();
+            closeModal('bookModal');
+        }
+
+        // Ödev kaydet
+        function saveAssignment() {
+            const studentId = document.getElementById('assignmentStudentSelect').value;
+            const bookId = document.getElementById('assignmentBookSelect').value;
+            
+            if(!studentId || !bookId) {
+                alert('Öğrenci ve kitap seçmelisiniz!');
+                return;
+            }
+            
+            const inputs = document.querySelectorAll('#daysContainer input');
+            const pages = {};
+            
+            inputs.forEach(input => {
+                if(input.value.trim()) {
+                    pages[input.dataset.day] = input.value.trim();
+                }
+            });
+            
+            if(Object.keys(pages).length === 0) {
+                alert('En az bir gün için sayfa aralığı girin!');
+                return;
+            }
+            
+            const student = students.find(s => s.id == studentId);
+            const book = books.find(b => b.id == bookId);
+            
+            const assignment = {
+                id: Date.now(),
+                studentId: studentId,
+                studentName: student.name,
+                bookId: bookId,
+                bookName: book.name,
+                pages: pages,
+                date: new Date().toLocaleDateString('tr-TR'),
+                weekStart: getWeekStartDate()
+            };
+            
+            assignments.push(assignment);
+            saveData();
+            
+            // Link oluştur
+            const link = `${window.location.origin}${window.location.pathname}?studentId=${studentId}&assignmentId=${assignment.id}`;
+            
+            // Linki göster
+            closeModal('assignmentModal');
+            alert('Ödev planı oluşturuldu! Öğrenciye göndermek için linki kopyalayın:');
+            prompt("Öğrenci Linki:", link);
+            
+            renderAllData();
+        }
+
+        // Silme işlemi onayı
+        function confirmDelete() {
+            if(deleteType === 'student') {
+                students = students.filter(s => s.id != currentStudentId);
+                assignments = assignments.filter(a => a.studentId != currentStudentId);
+            } 
+            else if(deleteType === 'book') {
+                books = books.filter(b => b.id != currentBookId);
+                assignments = assignments.filter(a => a.bookId != currentBookId);
+            }
+            else if(deleteType === 'assignment') {
+                assignments = assignments.filter(a => a.id != currentAssignmentId);
+            }
+            
+            saveData();
+            renderAllData();
+            closeModal('confirmModal');
+        }
+
+        // Silme modalını aç
+        function openDeleteModal(type, id, name) {
+            deleteType = type;
+            
+            if(type === 'student') {
+                currentStudentId = id;
+                document.getElementById('confirmModalTitle').innerHTML = `
+                    <i class="fas fa-user-times"></i>
+                    Öğrenci Silme
+                `;
+                document.getElementById('confirmModalMessage').textContent = 
+                    `${name} öğrencisini ve tüm ödevlerini silmek istediğinize emin misiniz?`;
+            } 
+            else if(type === 'book') {
+                currentBookId = id;
+                document.getElementById('confirmModalTitle').innerHTML = `
+                    <i class="fas fa-book-dead"></i>
+                    Kitap Silme
+                `;
+                document.getElementById('confirmModalMessage').textContent = 
+                    `${name} kitabını ve bu kitaba ait tüm ödevleri silmek istediğinize emin misiniz?`;
+            }
+            else if(type === 'assignment') {
+                currentAssignmentId = id;
+                document.getElementById('confirmModalTitle').innerHTML = `
+                    <i class="fas fa-trash-alt"></i>
+                    Ödev Silme
+                `;
+                document.getElementById('confirmModalMessage').textContent = 
+                    `Bu ödev planını silmek istediğinize emin misiniz?`;
+            }
+            
+            openModal('confirmModal');
+        }
+
+        // Tüm verileri render et
+        function renderAllData() {
+            renderStudents();
+            renderBooks();
+            renderAllAssignments();
+        }
+
+        // Öğrencileri listele
+        function renderStudents() {
+            const container = document.getElementById('studentsContainer');
+            if(!container) return;
+            
+            let html = '';
+            
+            students.forEach(student => {
+                const studentAssignments = assignments.filter(a => a.studentId == student.id);
+                
+                html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">${student.name}</h3>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-danger" onclick="openDeleteModal('student', ${student.id}, '${student.name}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <p><i class="fas fa-phone"></i> ${student.phone || 'Belirtilmemiş'}</p>
+                        
+                        <div class="assignment-list" style="margin-top:1rem;">
+                            <h4><i class="fas fa-tasks"></i> Ödevler (${studentAssignments.length})</h4>
+                            ${studentAssignments.length > 0 ? 
+                                studentAssignments.map(a => `
+                                    <div class="assignment-item">
+                                        <span>${a.bookName} - ${a.date}</span>
+                                        <div>
+                                            <button class="btn btn-sm btn-primary" onclick="generateStudentLink(${student.id}, ${a.id})">
+                                                <i class="fas fa-share"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger" onclick="openDeleteModal('assignment', ${a.id}, '')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('') : 
+                                '<p>Henüz ödev planı yok</p>'
+                            }
+                        </div>
+                        
+                        <button class="btn btn-primary" style="width: 100%; margin-top: 1.5rem;" 
+                                onclick="openAssignmentModal(${student.id})">
+                            <i class="fas fa-plus"></i> Yeni Ödev Ekle
+                        </button>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html || '<div class="card"><p>Henüz öğrenci eklenmedi</p></div>';
+        }
+
+        // Kitapları listele
+        function renderBooks() {
+            const container = document.getElementById('booksContainer');
+            if(!container) return;
+            
+            let html = '<div class="card-grid">';
+            
+            books.forEach(book => {
+                const bookAssignments = assignments.filter(a => a.bookId == book.id);
+                
+                html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">${book.name}</h3>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-danger" onclick="openDeleteModal('book', ${book.id}, '${book.name}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <p><i class="fas fa-user-edit"></i> ${book.author}</p>
+                        <p><i class="fas fa-file-alt"></i> ${book.pages || 'Belirtilmemiş'} sayfa</p>
+                        <span class="badge ${book.level === 'Başlangıç' ? 'badge-primary' : 
+                                          book.level === 'Orta' ? 'badge-warning' : 'badge-primary'}">
+                            ${book.level}
+                        </span>
+                        
+                        <div style="margin-top:1rem;">
+                            <h4><i class="fas fa-users"></i> Atanan Öğrenciler (${bookAssignments.length})</h4>
+                            ${bookAssignments.length > 0 ? 
+                                bookAssignments.map(a => `
+                                    <div class="assignment-item">
+                                        <span>${a.studentName}</span>
+                                        <small>${a.date}</small>
+                                    </div>
+                                `).join('') : 
+                                '<p>Henüz öğrenciye atanmadı</p>'
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html || '<div class="card"><p>Henüz kitap eklenmedi</p></div>';
+        }
+
+        // Tüm ödevleri listele
+        function renderAllAssignments() {
+            const container = document.getElementById('allAssignments');
+            if(!container) return;
+            
+            let html = '';
+            
+            assignments.forEach(assignment => {
+                const student = students.find(s => s.id == assignment.studentId) || {};
+                const book = books.find(b => b.id == assignment.bookId) || {};
+                
+                html += `
+                    <tr>
+                        <td>${student.name || 'Silinmiş öğrenci'}</td>
+                        <td>${book.name || 'Silinmiş kitap'}</td>
+                        <td>${assignment.date}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="generateStudentLink(${assignment.studentId}, ${assignment.id})">
+                                <i class="fas fa-eye"></i> Görüntüle
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="openDeleteModal('assignment', ${assignment.id}, '')">
+                                <i class="fas fa-trash"></i> Sil
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            container.innerHTML = html || '<tr><td colspan="4" style="text-align:center;">Henüz ödev eklenmedi</td></tr>';
+        }
+
+        // Öğrenci görünümünü göster
+        function showStudentView(studentId) {
+            document.getElementById('teacherView').style.display = 'none';
+            document.getElementById('studentView').style.display = 'block';
+            
+            const student = students.find(s => s.id == studentId);
+            if(!student) return;
+            
+            document.getElementById('studentViewTitle').textContent = `${student.name} - Ödev Planı`;
+            
+            const assignmentId = urlParams.get('assignmentId');
+            const assignment = assignments.find(a => a.id == assignmentId && a.studentId == studentId);
+            
+            if(!assignment) {
+                document.getElementById('weekPlan').innerHTML = '<p>Ödev planı bulunamadı</p>';
+                return;
+            }
+            
+            const book = books.find(b => b.id == assignment.bookId) || {};
+            
+            let html = `
+                <div class="card">
+                    <h3>${book.name || 'Silinmiş Kitap'}</h3>
+                    <p>${book.author || ''} • ${assignment.date}</p>
+                </div>
+            `;
+            
+            for(const [day, pages] of Object.entries(assignment.pages)) {
+                html += `
+                    <div class="day-card">
+                        <h3 class="day-title">
+                            <i class="fas fa-calendar-day"></i>
+                            ${day}
+                        </h3>
+                        <p><strong>Sayfalar:</strong> ${pages}</p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('weekPlan').innerHTML = html;
+        }
+
+        // Paylaşılabilir link oluştur
+        function generateStudentLink(studentId, assignmentId) {
+            const link = `${window.location.origin}${window.location.pathname}?studentId=${studentId}&assignmentId=${assignmentId}`;
+            prompt("Öğrenciye göndermek için linki kopyalayın:", link);
+        }
+
+        // Haftanın başlangıç tarihini bul (Pazartesi)
+        function getWeekStartDate() {
+            const today = new Date();
+                    const day = today.getDay(); // 0 Pazar, 1 Pazartesi...
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Pazartesiye göre ayarla
+        return new Date(today.setDate(diff)).toLocaleDateString('tr-TR');
+    }
+
+    // Verileri kaydet
+    function saveData() {
+        localStorage.setItem('students', JSON.stringify(students));
+        localStorage.setItem('books', JSON.stringify(books));
+        localStorage.setItem('assignments', JSON.stringify(assignments));
+    }
+
+    // Tabları yönet
+    function showTab(tabId) {
+        // Tüm tab içeriklerini gizle
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Tüm tab başlıklarını pasif yap
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        // Aktif tabı göster
+        document.getElementById(tabId).classList.add('active');
+        
+        // Nav menüyü güncelle
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.getAttribute('onclick')?.includes(tabId)) {
+                item.classList.add('active');
+            }
+        });
+        
+        // Tab başlığını aktif yap
+        document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+    }
+
+    // Tab başlıklarına tıklama eventi ekle
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            showTab(this.dataset.tab);
+        });
+    });
+</script>
+</body>
+</html>
