@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ödev Takip Sistemi</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .dark {
+            color-scheme: dark;
+        }
+        .dark body {
+            background-color: #181818;
+            color: #e0e0e0;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: #2d2d2d;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5D5CDE;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a49b5;
+        }
+        /* Loading animation */
+        .loader {
+            border-top-color: #5D5CDE;
+            animation: spinner 1.5s linear infinite;
+        }
+        @keyframes spinner {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Toast notification */
+        .toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #5D5CDE;
+            color: white;
+            text-align: center;
+            border-radius: 8px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            transform: translateY(100px);
+        }
+        .toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+            transform: translateY(0);
+        }
+        @keyframes fadein {
+            from {transform: translateY(100px); opacity: 0;}
+            to {transform: translateY(0); opacity: 1;}
+        }
+        @keyframes fadeout {
+            from {transform: translateY(0); opacity: 1;}
+            to {transform: translateY(100px); opacity: 0;}
+        }
+    </style>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen transition-colors duration-150">
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- Student View Mode (Hidden by default) -->
+    <div id="student-view" class="hidden p-4">
+        <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-white" id="student-name-title">Öğrenci Programı</h2>
+                <button id="back-to-login" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <i class="fas fa-arrow-left mr-2"></i>Çıkış
+                </button>
+            </div>
+            <div id="student-program-container" class="space-y-6">
+                <!-- Program content will be displayed here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Login (Hidden if URL has params) -->
+    <div id="teacher-login" class="p-4">
+        <div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-center text-gray-800 dark:text-white mb-6">Ödev Takip Sistemi</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şifre</label>
+                    <input type="password" id="password" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Şifrenizi girin">
+                </div>
+                <button id="login-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-colors">
+                    Giriş Yap
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Teacher Dashboard (Hidden by default) -->
+    <div id="teacher-dashboard" class="hidden">
+        <nav class="bg-purple-600 dark:bg-purple-800 text-white p-4 shadow-md">
+            <div class="container mx-auto flex flex-col md:flex-row justify-between items-center">
+                <div class="flex items-center mb-4 md:mb-0">
+                    <i class="fas fa-book-reader text-2xl mr-2"></i>
+                    <h1 class="text-xl font-bold">Ödev Takip Sistemi</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="toggle-theme" class="text-white hover:text-gray-200 focus:outline-none">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="logout-btn" class="bg-purple-700 hover:bg-purple-800 px-4 py-2 rounded-md transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>Çıkış
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container mx-auto p-4">
+            <!-- Navigation Tabs -->
+            <div class="flex overflow-x-auto mb-6 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                <button class="tab-btn active flex-1 px-4 py-3 text-center font-medium border-b-2 border-purple-600 text-purple-600 dark:text-purple-400" data-tab="dashboard">
+                    <i class="fas fa-tachometer-alt mr-2"></i>Panel
+                </button>
+                <button class="tab-btn flex-1 px-4 py-3 text-center font-medium border-b-2 border-transparent hover:text-purple-600 dark:hover:text-purple-400" data-tab="students">
+                    <i class="fas fa-user-graduate mr-2"></i>Öğrenciler
+                </button>
+                <button class="tab-btn flex-1 px-4 py-3 text-center font-medium border-b-2 border-transparent hover:text-purple-600 dark:hover:text-purple-400" data-tab="books">
+                    <i class="fas fa-book mr-2"></i>Kitaplar
+                </button>
+                <button class="tab-btn flex-1 px-4 py-3 text-center font-medium border-b-2 border-transparent hover:text-purple-600 dark:hover:text-purple-400" data-tab="programs">
+                    <i class="fas fa-calendar-alt mr-2"></i>Programlar
+                </button>
+            </div>
+
+            <!-- Tab Contents -->
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Öğrenciler</h3>
+                            <span class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="student-count">0</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Toplam öğrenci sayısı</p>
+                        <button class="mt-4 w-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 py-2 px-4 rounded-md transition-colors" data-tab="students">
+                            <i class="fas fa-user-plus mr-2"></i>Öğrenci Ekle
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Kitaplar</h3>
+                            <span class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="book-count">0</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Toplam kitap sayısı</p>
+                        <button class="mt-4 w-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 py-2 px-4 rounded-md transition-colors" data-tab="books">
+                            <i class="fas fa-book-medical mr-2"></i>Kitap Ekle
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Programlar</h3>
+                            <span class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="program-count">0</span>
+                        </div>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Toplam program sayısı</p>
+                        <button class="mt-4 w-full bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 hover:bg-purple-200 dark:hover:bg-purple-800 py-2 px-4 rounded-md transition-colors" data-tab="programs">
+                            <i class="fas fa-plus-circle mr-2"></i>Program Oluştur
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Son Programlar</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Öğrenci</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Başlık</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-programs" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Recent programs will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Students Tab -->
+            <div id="students-tab" class="tab-content">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Öğrenci Ekle</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="student-name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">İsim</label>
+                            <input type="text" id="student-name" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Öğrenci adı">
+                        </div>
+                        <div>
+                            <label for="student-class" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sınıf</label>
+                            <input type="text" id="student-class" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Sınıf">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="add-student-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Ekle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Öğrenci Listesi</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İsim</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Sınıf</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Programlar</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="students-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Students will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Books Tab -->
+            <div id="books-tab" class="tab-content">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Kitap Ekle</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label for="book-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kitap Adı</label>
+                            <input type="text" id="book-title" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Kitap adı">
+                        </div>
+                        <div>
+                            <label for="book-author" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Yazar</label>
+                            <input type="text" id="book-author" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Yazar adı">
+                        </div>
+                        <div class="flex items-end">
+                            <button id="add-book-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>Ekle
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Kitap Listesi</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">ID</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Kitap Adı</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Yazar</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="books-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Books will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Programs Tab -->
+            <div id="programs-tab" class="tab-content">
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-6">
+                    <h3 class="text-lg font-semibold mb-4">Program Oluştur</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label for="program-student" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Öğrenci</label>
+                            <select id="program-student" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white">
+                                <option value="">Öğrenci seçin</option>
+                                <!-- Students will be populated here -->
+                            </select>
+                        </div>
+                        <div>
+                            <label for="program-title" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Program Başlığı</label>
+                            <input type="text" id="program-title" class="w-full px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Program başlığı">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Haftalık Program</label>
+                        <div id="weekly-schedule" class="space-y-4">
+                            <!-- Days will be added here -->
+                            <div class="day-entry bg-gray-50 dark:bg-gray-700 p-4 rounded-md">
+                                <div class="flex justify-between items-center mb-2">
+                                    <h4 class="font-medium">Pazartesi</h4>
+                                </div>
+                                <div class="assignments space-y-2">
+                                    <div class="assignment flex items-center space-x-2">
+                                        <select class="book-select flex-grow px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white">
+                                            <option value="">Kitap seçin</option>
+                                            <!-- Books will be populated here -->
+                                        </select>
+                                        <input type="text" class="pages-input w-24 px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Sayfa">
+                                        <button class="remove-assignment bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-2 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button class="add-assignment mt-2 text-sm bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                    <i class="fas fa-plus mr-1"></i>Ödev Ekle
+                                </button>
+                            </div>
+                            <!-- Repeat for other days... -->
+                        </div>
+                    </div>
+
+                    <button id="create-program-btn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Programı Oluştur
+                    </button>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-semibold mb-4">Program Listesi</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                            <thead>
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tarih</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Öğrenci</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Başlık</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">İşlemler</th>
+                                </tr>
+                            </thead>
+                            <tbody id="programs-list" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <!-- Programs will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student Program Detail Modal -->
+    <div id="program-detail-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="modal-title" class="text-xl font-bold">Program Detayı</h3>
+                <button id="close-modal" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 focus:outline-none">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="space-y-4">
+                <!-- Program details will be displayed here -->
+            </div>
+            <div class="mt-6 flex justify-between">
+                <button id="copy-link-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-colors">
+                    <i class="fas fa-link mr-2"></i>Linki Kopyala
+                </button>
+                <button id="close-modal-btn" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors">
+                    Kapat
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div id="confirm-delete-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+            <div class="text-center mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-500 text-4xl mb-4"></i>
+                <h3 class="text-xl font-bold mb-2">Silme İşlemi</h3>
+                <p id="delete-message" class="text-gray-600 dark:text-gray-400">Bu öğeyi silmek istediğinize emin misiniz?</p>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6">
+                <button id="cancel-delete" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200 font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50 transition-colors">
+                    İptal
+                </button>
+                <button id="confirm-delete" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50 transition-colors">
+                    Sil
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode support
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        // DOM Elements
+        const teacherLogin = document.getElementById('teacher-login');
+        const teacherDashboard = document.getElementById('teacher-dashboard');
+        const studentView = document.getElementById('student-view');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const backToLoginBtn = document.getElementById('back-to-login');
+        const toggleThemeBtn = document.getElementById('toggle-theme');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const programDetailModal = document.getElementById('program-detail-modal');
+        const closeModal = document.getElementById('close-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const copyLinkBtn = document.getElementById('copy-link-btn');
+        const confirmDeleteModal = document.getElementById('confirm-delete-modal');
+        const cancelDelete = document.getElementById('cancel-delete');
+        const confirmDelete = document.getElementById('confirm-delete');
+        const toastElement = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+
+        // Data storage keys
+        const TEACHER_PASSWORD_KEY = 'homework_tracker_password';
+        const STUDENTS_KEY = 'homework_tracker_students';
+        const BOOKS_KEY = 'homework_tracker_books';
+        const PROGRAMS_KEY = 'homework_tracker_programs';
+
+        // App state
+        let currentProgramId = null;
+        let deleteCallback = null;
+
+        // Base application URL
+        const baseUrl = window.location.href.split('?')[0];
+
+        // Check if this is a shared program view (URL parameter)
+        const urlParams = new URLSearchParams(window.location.search);
+        const programId = urlParams.get('program');
+
+        // Data Models
+        let students = [];
+        let books = [];
+        let programs = [];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', initialize);
+
+        function initialize() {
+            // Load data from localStorage
+            loadData();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Populate initial data
+            populateWeekDays();
+            updateDashboardCounts();
+            populateStudentSelect();
+            populateBookSelects();
+            
+            // Check URL parameters
+            if (programId) {
+                showStudentView(programId);
+            } else {
+                // Check if password is set
+                const savedPassword = localStorage.getItem(TEACHER_PASSWORD_KEY);
+                if (!savedPassword) {
+                    // First time setup - show login to set password
+                    teacherLogin.classList.remove('hidden');
+                } else {
+                    // Show login screen for returning users
+                    teacherLogin.classList.remove('hidden');
+                }
+            }
+        }
+
+        function loadData() {
+            // Load students
+            const savedStudents = localStorage.getItem(STUDENTS_KEY);
+            if (savedStudents) {
+                students = JSON.parse(savedStudents);
+            }
+            
+            // Load books
+            const savedBooks = localStorage.getItem(BOOKS_KEY);
+            if (savedBooks) {
+                books = JSON.parse(savedBooks);
+            }
+            
+            // Load programs
+            const savedPrograms = localStorage.getItem(PROGRAMS_KEY);
+            if (savedPrograms) {
+                programs = JSON.parse(savedPrograms);
+            }
+            
+            // Sort programs by date (newest first)
+            programs.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        function saveData() {
+            localStorage.setItem(STUDENTS_KEY, JSON.stringify(students));
+            localStorage.setItem(BOOKS_KEY, JSON.stringify(books));
+            localStorage.setItem(PROGRAMS_KEY, JSON.stringify(programs));
+            updateDashboardCounts();
+        }
+
+        function setupEventListeners() {
+            // Login/Logout
+            loginBtn.addEventListener('click', handleLogin);
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') handleLogin();
+            });
+            logoutBtn.addEventListener('click', handleLogout);
+            backToLoginBtn.addEventListener('click', () => {
+                studentView.classList.add('hidden');
+                teacherLogin.classList.remove('hidden');
+            });
+            
+            // Theme toggle
+            toggleThemeBtn.addEventListener('click', toggleTheme);
+            
+            // Tab navigation
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+
+            // Dashboard quick buttons
+            document.querySelectorAll('#dashboard-tab button[data-tab]').forEach(button => {
+                button.addEventListener('click', () => {
+                    const tabName = button.getAttribute('data-tab');
+                    switchTab(tabName);
+                });
+            });
+            
+            // Form Submissions
+            document.getElementById('add-student-btn').addEventListener('click', addStudent);
+            document.getElementById('add-book-btn').addEventListener('click', addBook);
+            document.getElementById('create-program-btn').addEventListener('click', createProgram);
+            
+            // Weekly schedule setup
+            document.querySelectorAll('.add-assignment').forEach(btn => {
+                btn.addEventListener('click', addAssignment);
+            });
+            
+            // Modal controls
+            closeModal.addEventListener('click', () => programDetailModal.classList.add('hidden'));
+            closeModalBtn.addEventListener('click', () => programDetailModal.classList.add('hidden'));
+            copyLinkBtn.addEventListener('click', copyProgramLink);
+            
+            // Delete confirmation
+            cancelDelete.addEventListener('click', () => confirmDeleteModal.classList.add('hidden'));
+            confirmDelete.addEventListener('click', () => {
+                if (deleteCallback) deleteCallback();
+                confirmDeleteModal.classList.add('hidden');
+            });
+        }
+
+        function handleLogin() {
+            const password = passwordInput.value.trim();
+            if (!password) {
+                showToast('Lütfen şifre girin');
+                return;
+            }
+            
+            const savedPassword = localStorage.getItem(TEACHER_PASSWORD_KEY);
+            
+            if (!savedPassword) {
+                // First time setup - save password
+                localStorage.setItem(TEACHER_PASSWORD_KEY, password);
+                showToast('Şifre kaydedildi');
+                teacherLogin.classList.add('hidden');
+                teacherDashboard.classList.remove('hidden');
+            } else if (password === savedPassword) {
+                // Correct password
+                teacherLogin.classList.add('hidden');
+                teacherDashboard.classList.remove('hidden');
+            } else {
+                // Wrong password
+                showToast('Hatalı şifre');
+            }
+            
+            // Clear password field
+            passwordInput.value = '';
+        }
+
+        function handleLogout() {
+            teacherDashboard.classList.add('hidden');
+            teacherLogin.classList.remove('hidden');
+        }
+
+        function toggleTheme() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            const icon = toggleThemeBtn.querySelector('i');
+            
+            if (isDark) {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        }
+
+        function switchTab(tabName) {
+            // Update button states
+            tabButtons.forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active', 'border-purple-600', 'text-purple-600', 'dark:text-purple-400');
+                    btn.classList.remove('border-transparent', 'hover:text-purple-600', 'dark:hover:text-purple-400');
+                } else {
+                    btn.classList.remove('active', 'border-purple-600', 'text-purple-600', 'dark:text-purple-400');
+                    btn.classList.add('border-transparent', 'hover:text-purple-600', 'dark:hover:text-purple-400');
+                }
+            });
+            
+            // Update tab content
+            tabContents.forEach(content => {
+                if (content.id === `${tabName}-tab`) {
+                    content.classList.add('active');
+                } else {
+                    content.classList.remove('active');
+                }
+            });
+            
+            // Refresh data for selected tab
+            if (tabName === 'students') {
+                refreshStudentsList();
+            } else if (tabName === 'books') {
+                refreshBooksList();
+            } else if (tabName === 'programs') {
+                refreshProgramsList();
+            } else if (tabName === 'dashboard') {
+                refreshRecentPrograms();
+            }
+        }
+
+        function updateDashboardCounts() {
+            document.getElementById('student-count').textContent = students.length;
+            document.getElementById('book-count').textContent = books.length;
+            document.getElementById('program-count').textContent = programs.length;
+        }
+
+        function populateWeekDays() {
+            const weeklySchedule = document.getElementById('weekly-schedule');
+            weeklySchedule.innerHTML = '';
+            
+            const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+            
+            days.forEach(day => {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'day-entry bg-gray-50 dark:bg-gray-700 p-4 rounded-md';
+                dayElement.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-medium">${day}</h4>
+                    </div>
+                    <div class="assignments space-y-2">
+                        <div class="assignment flex items-center space-x-2">
+                            <select class="book-select flex-grow px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white">
+                                <option value="">Kitap seçin</option>
+                                <!-- Books will be populated here -->
+                            </select>
+                            <input type="text" class="pages-input w-24 px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Sayfa">
+                            <button class="remove-assignment bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-2 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button class="add-assignment mt-2 text-sm bg-gray-200 dark:bg-gray-600 px-3 py-1 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                        <i class="fas fa-plus mr-1"></i>Ödev Ekle
+                    </button>
+                `;
+                
+                weeklySchedule.appendChild(dayElement);
+                
+                // Add event listeners
+                const addBtn = dayElement.querySelector('.add-assignment');
+                addBtn.addEventListener('click', addAssignment);
+                
+                const removeBtn = dayElement.querySelector('.remove-assignment');
+                removeBtn.addEventListener('click', removeAssignment);
+            });
+            
+            populateBookSelects();
+        }
+
+        function populateStudentSelect() {
+            const studentSelect = document.getElementById('program-student');
+            studentSelect.innerHTML = '<option value="">Öğrenci seçin</option>';
+            
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = `${student.name} (${student.class})`;
+                studentSelect.appendChild(option);
+            });
+        }
+
+        function populateBookSelects() {
+            const bookSelects = document.querySelectorAll('.book-select');
+            
+            bookSelects.forEach(select => {
+                // Keep the first option
+                const firstOption = select.querySelector('option:first-child');
+                select.innerHTML = '';
+                select.appendChild(firstOption);
+                
+                // Add book options
+                books.forEach(book => {
+                    const option = document.createElement('option');
+                    option.value = book.id;
+                    option.textContent = `${book.title} (${book.author})`;
+                    select.appendChild(option);
+                });
+            });
+        }
+
+        function addAssignment(e) {
+            const assignmentsContainer = e.target.closest('.day-entry').querySelector('.assignments');
+            
+            const newAssignment = document.createElement('div');
+            newAssignment.className = 'assignment flex items-center space-x-2';
+            newAssignment.innerHTML = `
+                <select class="book-select flex-grow px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white">
+                    <option value="">Kitap seçin</option>
+                    <!-- Books will be populated here -->
+                </select>
+                <input type="text" class="pages-input w-24 px-4 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 dark:bg-gray-700 dark:text-white" placeholder="Sayfa">
+                <button class="remove-assignment bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-2 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            
+            assignmentsContainer.appendChild(newAssignment);
+            
+            // Populate book options
+            const bookSelect = newAssignment.querySelector('.book-select');
+            bookSelect.innerHTML = '<option value="">Kitap seçin</option>';
+            books.forEach(book => {
+                const option = document.createElement('option');
+                option.value = book.id;
+                option.textContent = `${book.title} (${book.author})`;
+                bookSelect.appendChild(option);
+            });
+            
+            // Add event listener for remove button
+            const removeBtn = newAssignment.querySelector('.remove-assignment');
+            removeBtn.addEventListener('click', removeAssignment);
+        }
+
+        function removeAssignment(e) {
+            const assignment = e.target.closest('.assignment');
+            const assignmentsContainer = assignment.closest('.assignments');
+            
+            // Only remove if there's more than one assignment
+            if (assignmentsContainer.children.length > 1) {
+                assignment.remove();
+            }
+        }
+
+        function generateUniqueId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        }
+
+        function addStudent() {
+            const nameInput = document.getElementById('student-name');
+            const classInput = document.getElementById('student-class');
+            
+            const name = nameInput.value.trim();
+            const studentClass = classInput.value.trim();
+            
+            if (!name) {
+                showToast('Lütfen öğrenci adını girin');
+                return;
+            }
+            
+            const newStudent = {
+                id: generateUniqueId(),
+                name: name,
+                class: studentClass || 'Belirtilmedi'
+            };
+            
+            students.push(newStudent);
+            saveData();
+            
+            // Clear inputs
+            nameInput.value = '';
+            classInput.value = '';
+            
+            // Refresh lists
+            refreshStudentsList();
+            populateStudentSelect();
+            
+            showToast('Öğrenci başarıyla eklendi');
+        }
+
+        function addBook() {
+            const titleInput = document.getElementById('book-title');
+            const authorInput = document.getElementById('book-author');
+            
+            const title = titleInput.value.trim();
+            const author = authorInput.value.trim();
+            
+            if (!title) {
+                showToast('Lütfen kitap adını girin');
+                return;
+            }
+            
+            const newBook = {
+                id: generateUniqueId(),
+                title: title,
+                author: author || 'Belirtilmedi'
+            };
+            
+            books.push(newBook);
+            saveData();
+            
+            // Clear inputs
+            titleInput.value = '';
+            authorInput.value = '';
+            
+            // Refresh lists
+            refreshBooksList();
+            populateBookSelects();
+            
+            showToast('Kitap başarıyla eklendi');
+        }
+
+        function createProgram() {
+            const studentSelect = document.getElementById('program-student');
+            const titleInput = document.getElementById('program-title');
+            
+            const studentId = studentSelect.value;
+            const title = titleInput.value.trim();
+            
+            if (!studentId) {
+                showToast('Lütfen bir öğrenci seçin');
+                return;
+            }
+            
+            if (!title) {
+                showToast('Lütfen program başlığı girin');
+                return;
+            }
+            
+            // Collect weekly assignments
+            const days = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+            const weeklySchedule = document.getElementById('weekly-schedule');
+            const dayEntries = weeklySchedule.querySelectorAll('.day-entry');
+            
+            const schedule = [];
+            let hasAssignments = false;
+            
+            dayEntries.forEach((dayEntry, index) => {
+                const assignments = [];
+                const assignmentElements = dayEntry.querySelectorAll('.assignment');
+                
+                assignmentElements.forEach(assignmentEl => {
+                    const bookId = assignmentEl.querySelector('.book-select').value;
+                    const pages = assignmentEl.querySelector('.pages-input').value.trim();
+                    
+                    if (bookId && pages) {
+                        const book = books.find(b => b.id === bookId);
+                        assignments.push({
+                            bookId: bookId,
+                            bookTitle: book ? book.title : 'Kitap bulunamadı',
+                            pages: pages
+                        });
+                        hasAssignments = true;
+                    }
+                });
+                
+                schedule.push({
+                    day: days[index],
+                    assignments: assignments
+                });
+            });
+            
+            if (!hasAssignments) {
+                showToast('Lütfen en az bir ödev ekleyin');
+                return;
+            }
+            
+            const student = students.find(s => s.id === studentId);
+            const newProgram = {
+                id: generateUniqueId(),
+                studentId: studentId,
+                studentName: student ? student.name : 'Bilinmeyen Öğrenci',
+                title: title,
+                date: new Date().toISOString(),
+                schedule: schedule
+            };
+            
+            programs.push(newProgram);
+            
+            // Sort programs by date (newest first)
+            programs.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            saveData();
+            
+            // Clear inputs
+            studentSelect.value = '';
+            titleInput.value = '';
+            populateWeekDays();
+            
+            // Refresh lists
+            refreshProgramsList();
+            refreshRecentPrograms();
+            
+            showToast('Program başarıyla oluşturuldu');
+            
+            // Show program details
+            viewProgram(newProgram.id);
+        }
+
+        function refreshStudentsList() {
+            const studentsList = document.getElementById('students-list');
+            studentsList.innerHTML = '';
+            
+            if (students.length === 0) {
+                studentsList.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            Henüz öğrenci eklenmemiş
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            students.forEach(student => {
+                // Count programs for this student
+                const studentPrograms = programs.filter(p => p.studentId === student.id);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${student.id.substring(0, 5)}...</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${student.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${student.class}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${studentPrograms.length}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        <button class="view-student-programs bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-2 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-id="${student.id}">
+                            <i class="fas fa-calendar-alt"></i>
+                        </button>
+                        <button class="delete-student bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-2 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors" data-id="${student.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                
+                studentsList.appendChild(row);
+                
+                // Add event listeners
+                row.querySelector('.view-student-programs').addEventListener('click', () => {
+                    viewStudentPrograms(student.id);
+                });
+                
+                row.querySelector('.delete-student').addEventListener('click', () => {
+                    confirmDeleteItem('öğrenciyi', () => deleteStudent(student.id));
+                });
+            });
+        }
+
+        function refreshBooksList() {
+            const booksList = document.getElementById('books-list');
+            booksList.innerHTML = '';
+            
+            if (books.length === 0) {
+                booksList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            Henüz kitap eklenmemiş
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            books.forEach(book => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">${book.id.substring(0, 5)}...</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${book.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${book.author}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        <button class="delete-book bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-2 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors" data-id="${book.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                
+                booksList.appendChild(row);
+                
+                // Add event listeners
+                row.querySelector('.delete-book').addEventListener('click', () => {
+                    confirmDeleteItem('kitabı', () => deleteBook(book.id));
+                });
+            });
+        }
+
+        function refreshProgramsList() {
+            const programsList = document.getElementById('programs-list');
+            programsList.innerHTML = '';
+            
+            if (programs.length === 0) {
+                programsList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            Henüz program oluşturulmamış
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            programs.forEach(program => {
+                const date = new Date(program.date).toLocaleDateString('tr-TR');
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${program.studentName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${program.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        <button class="view-program bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-2 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-id="${program.id}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="delete-program bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-2 rounded-md hover:bg-red-200 dark:hover:bg-red-800 transition-colors" data-id="${program.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                
+                programsList.appendChild(row);
+                
+                // Add event listeners
+                row.querySelector('.view-program').addEventListener('click', () => {
+                    viewProgram(program.id);
+                });
+                
+                row.querySelector('.delete-program').addEventListener('click', () => {
+                    confirmDeleteItem('programı', () => deleteProgram(program.id));
+                });
+            });
+        }
+
+        function refreshRecentPrograms() {
+            const recentPrograms = document.getElementById('recent-programs');
+            recentPrograms.innerHTML = '';
+            
+            if (programs.length === 0) {
+                recentPrograms.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                            Henüz program oluşturulmamış
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Show only the last 5 programs
+            const recentProgramsList = programs.slice(0, 5);
+            
+            recentProgramsList.forEach(program => {
+                const date = new Date(program.date).toLocaleDateString('tr-TR');
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${program.studentName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">${program.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        <button class="view-program bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-2 rounded-md hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors" data-id="${program.id}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                `;
+                
+                recentPrograms.appendChild(row);
+                
+                // Add event listeners
+                row.querySelector('.view-program').addEventListener('click', () => {
+                    viewProgram(program.id);
+                });
+            });
+        }
+
+        function viewProgram(programId) {
+            const program = programs.find(p => p.id === programId);
+            if (!program) return;
+            
+            currentProgramId = programId;
+            
+            const modalTitle = document.getElementById('modal-title');
+            const modalContent = document.getElementById('modal-content');
+            
+            modalTitle.textContent = `${program.title} - ${program.studentName}`;
+            
+            let content = `
+                <div class="bg-gray-100 dark:bg-gray-700 p-4 rounded-lg mb-4">
+                    <p class="font-medium mb-1">Öğrenci: ${program.studentName}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Oluşturulma Tarihi: ${new Date(program.date).toLocaleDateString('tr-TR')}</p>
+                </div>
+            `;
+            
+            program.schedule.forEach(day => {
+                if (day.assignments.length === 0) return;
+                
+                content += `
+                    <div class="day-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4">
+                        <h4 class="font-medium text-lg mb-3">${day.day}</h4>
+                        <ul class="space-y-2">
+                `;
+                
+                day.assignments.forEach(assignment => {
+                    content += `
+                        <li class="flex items-start">
+                            <i class="fas fa-book text-purple-600 dark:text-purple-400 mt-1 mr-2"></i>
+                            <span>${assignment.bookTitle}: ${assignment.pages}</span>
+                        </li>
+                    `;
+                });
+                
+                content += `
+                        </ul>
+                    </div>
+                `;
+            });
+            
+            modalContent.innerHTML = content;
+            
+            // Show modal
+            programDetailModal.classList.remove('hidden');
+        }
+
+        function viewStudentPrograms(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            
+            const studentPrograms = programs.filter(p => p.studentId === studentId);
+            
+            switchTab('programs');
+            
+            // If there are no programs for this student
+            if (studentPrograms.length === 0) {
+                showToast('Bu öğrenci için henüz program oluşturulmamış');
+                return;
+            }
+            
+            // Highlight student's programs
+            const programsList = document.getElementById('programs-list');
+            const rows = programsList.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const viewButton = row.querySelector('.view-program');
+                if (!viewButton) return;
+                
+                const programId = viewButton.getAttribute('data-id');
+                const program = programs.find(p => p.id === programId);
+                
+                if (program && program.studentId === studentId) {
+                    row.classList.add('bg-purple-50', 'dark:bg-purple-900/20');
+                } else {
+                    row.classList.remove('bg-purple-50', 'dark:bg-purple-900/20');
+                }
+            });
+        }
+
+        function deleteStudent(studentId) {
+            // Remove student
+            students = students.filter(s => s.id !== studentId);
+            
+            // Keep track of programs to remove
+            const programsToRemove = programs.filter(p => p.studentId === studentId);
+            
+            // Remove related programs
+            programs = programs.filter(p => p.studentId !== studentId);
+            
+            saveData();
+            refreshStudentsList();
+            refreshProgramsList();
+            refreshRecentPrograms();
+            populateStudentSelect();
+            
+            showToast(`Öğrenci ve ${programsToRemove.length} programı silindi`);
+        }
+
+        function deleteBook(bookId) {
+            // Check if book is used in any program
+            const usedInProgram = programs.some(program => 
+                program.schedule.some(day => 
+                    day.assignments.some(assignment => assignment.bookId === bookId)
+                )
+            );
+            
+            if (usedInProgram) {
+                showToast('Bu kitap bir veya daha fazla programda kullanıldığı için silinemez');
+                return;
+            }
+            
+            // Remove book
+            books = books.filter(b => b.id !== bookId);
+            
+            saveData();
+            refreshBooksList();
+            populateBookSelects();
+            
+            showToast('Kitap silindi');
+        }
+
+        function deleteProgram(programId) {
+            // Remove program
+            programs = programs.filter(p => p.id !== programId);
+            
+            saveData();
+            refreshProgramsList();
+            refreshRecentPrograms();
+            
+            showToast('Program silindi');
+        }
+
+        function confirmDeleteItem(itemType, callback) {
+            const deleteMessage = document.getElementById('delete-message');
+            deleteMessage.textContent = `Bu ${itemType} silmek istediğinize emin misiniz?`;
+            
+            deleteCallback = callback;
+            confirmDeleteModal.classList.remove('hidden');
+        }
+
+        function copyProgramLink() {
+            if (!currentProgramId) return;
+            
+            const shareUrl = `${baseUrl}?program=${currentProgramId}`;
+            
+            // Use Clipboard API
+            try {
+                navigator.clipboard.writeText(shareUrl).then(() => {
+                    showToast('Program linki kopyalandı');
+                });
+            } catch (err) {
+                // Fallback for browsers that don't support clipboard API
+                const tempInput = document.createElement('input');
+                tempInput.value = shareUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                showToast('Program linki kopyalandı');
+            }
+        }
+
+        function showStudentView(programId) {
+            const program = programs.find(p => p.id === programId);
+            if (!program) {
+                // Program not found, show error message
+                studentView.innerHTML = `
+                    <div class="max-w-md mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mt-10">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-circle text-red-500 text-5xl mb-4"></i>
+                            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-2">Program Bulunamadı</h2>
+                            <p class="text-gray-600 dark:text-gray-400 mb-6">İstediğiniz program bulunamadı veya silinmiş olabilir.</p>
+                            <button id="back-to-login" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                                Giriş Sayfasına Dön
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                studentView.querySelector('#back-to-login').addEventListener('click', () => {
+                    window.location.href = baseUrl;
+                });
+                
+                // Hide other sections
+                teacherLogin.classList.add('hidden');
+                teacherDashboard.classList.add('hidden');
+                studentView.classList.remove('hidden');
+                
+                return;
+            }
+            
+            // Set student name title
+            document.getElementById('student-name-title').textContent = `${program.title} - ${program.studentName}`;
+            
+            // Populate program container
+            const programContainer = document.getElementById('student-program-container');
+            let content = `
+                <div class="bg-purple-100 dark:bg-purple-900/30 p-4 rounded-lg mb-6">
+                    <h3 class="font-bold text-xl mb-1">${program.title}</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Oluşturulma Tarihi: ${new Date(program.date).toLocaleDateString('tr-TR')}</p>
+                </div>
+            `;
+            
+            program.schedule.forEach(day => {
+                if (day.assignments.length === 0) return;
+                
+                content += `
+                    <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 shadow-sm">
+                        <h4 class="font-medium text-lg text-purple-600 dark:text-purple-400 mb-3">${day.day}</h4>
+                        <ul class="space-y-3">
+                `;
+                
+                day.assignments.forEach(assignment => {
+                    content += `
+                        <li class="flex items-start">
+                            <i class="fas fa-book text-purple-600 dark:text-purple-400 mt-1 mr-3"></i>
+                            <div>
+                                <span class="font-medium">${assignment.bookTitle}</span>
+                                <span class="text-gray-700 dark:text-gray-300"> - ${assignment.pages}</span>
+                            </div>
+                        </li>
+                    `;
+                });
+                
+                content += `
+                        </ul>
+                    </div>
+                `;
+            });
+            
+            programContainer.innerHTML = content;
+            
+            // Hide other sections
+            teacherLogin.classList.add('hidden');
+            teacherDashboard.classList.add('hidden');
+            studentView.classList.remove('hidden');
+        }
+
+        function showToast(message) {
+            toastMessage.textContent = message;
+            toastElement.classList.add('show');
+            
+            // Hide the toast after 3 seconds
+            setTimeout(() => {
+                toastElement.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
